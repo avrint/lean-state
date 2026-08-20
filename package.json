@@ -1,0 +1,25 @@
+{
+  "name": "lean-state",
+  "version": "1.0.0",
+  "description": "Zero-import application state, persistence, subscriptions, and messaging for browser applications.",
+  "main": "cucumber.js",
+  "scripts": {
+    "create-docs": "jsdoc2md jsdoc2md --heading-depth 2 src/lean-state.js > API.md"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/avrint/lean-state.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/avrint/lean-state/issues"
+  },
+  "homepage": "https://github.com/avrint/lean-state#readme",
+  "devDependencies": {
+    "@cucumber/cucumber": "^13.2.1",
+    "jsdoc-to-markdown": "^9.1.3",
+    "playwright": "^1.62.1"
+  }
+}

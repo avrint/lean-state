@@ -1,0 +1,58 @@
+name: Generate API Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'lean-state.js' # Only runs when your source file changes
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install -g jsdoc-to-markdown
+
+      - name: Generate and Inject Documentation
+        run: |
+          # Option A: Generate a standalone API.md file
+          # jsdoc2md lean-state.js > API.md
+
+          # Option B: If you want to inject it straight into README.md between markers, 
+          # jsdoc2md supports template injection or you can use a small node script:
+          node -e '
+            const fs = require("fs");
+            const jsdoc2md = require("src/lean-state.js");
+            async function run() {
+              const api = await jsdoc2md.render({ files: "lean-state.js" });
+              let readme = fs.readFileSync("README.md", "utf8");
+              const start = "<!-- START API -->";
+              const end = "<!-- END API -->";
+              const startIndex = readme.indexOf(start) + start.length;
+              const endIndex = readme.indexOf(end);
+              if (startIndex !== -1 && endIndex !== -1) {
+                readme = readme.substring(0, startIndex) + "\n\n" + api + "\n\n" + readme.substring(endIndex);
+                fs.writeFileSync("README.md", readme);
+              }
+            }
+            run();
+          '
+
+      - name: Commit and Push Changes
+        uses: devops-infra/action-commit-push@v1.5.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          commit_message: "docs: automatic API documentation update"
+          branch: main
