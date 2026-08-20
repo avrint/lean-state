@@ -27,11 +27,6 @@ jobs:
 
       - name: Generate and Inject Documentation
         run: |
-          # Option A: Generate a standalone API.md file
-          # jsdoc2md lean-state.js > API.md
-
-          # Option B: If you want to inject it straight into README.md between markers, 
-          # jsdoc2md supports template injection or you can use a small node script:
           node -e '
             const fs = require("fs");
             const jsdoc2md = require("src/lean-state.js");
