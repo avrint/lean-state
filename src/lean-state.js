@@ -815,7 +815,6 @@
       log("subscribe rejected; context already dead", channel);
       return function () {};
     }
-
     
     var sub = {
       handler: useWeak ? null : handler,
