@@ -4,5 +4,12 @@ Zero-import application kernel.
 
 ## API Reference
 
+<details>
+
+<summary>Lean State API Reference</summary>
+
 <!-- START API -->
 <!-- END API -->
+
+</details>
+
