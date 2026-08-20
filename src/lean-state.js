@@ -870,8 +870,7 @@
         bridgeChannel: r.bridgeChannel,
       };
     }
-    
-    
+
     if (typeof options !== "object") return config();
     
     Object.keys(options).forEach(function (k) {
