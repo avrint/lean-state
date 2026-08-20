@@ -34,8 +34,8 @@ jobs:
             async function run() {
               try {
                 // Pass files array correctly to the async render method
-                const api = await jsdoc2md.render({ files: "./src/lean-state.js" });
-                let readme = fs.readFileSync("README.md", "utf8");
+                const api = await jsdoc2md.render({ files: "./src/docs/README.md" });
+                let readme = fs.readFileSync("./src/docs/README.md", "utf8");
                 
                 const start = "<!-- START API -->";
                 const end = "<!-- END API -->";
@@ -64,5 +64,5 @@ jobs:
         uses: devops-infra/action-commit-push@v1.5.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          commit_message: "docs: automatic API documentation update"
+          commit_message: "[skip ci] docs: automatic API documentation update"
           branch: main

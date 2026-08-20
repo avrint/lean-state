@@ -892,9 +892,10 @@
 
     log("config updated", config());
     return config();
+    
   }
 
-  
+
 
   /**
    * Retrieves the generated application identity and runtimes.
