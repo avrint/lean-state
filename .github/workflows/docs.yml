@@ -29,19 +29,34 @@ jobs:
         run: |
           node -e '
             const fs = require("fs");
-            const jsdoc2md = require("./src/lean-state.js");
+            const jsdoc2md = require("jsdoc-to-markdown");
+
             async function run() {
-              const api = await jsdoc2md.render({ files: "lean-state.js" });
-              let readme = fs.readFileSync("README.md", "utf8");
-              const start = "<!-- START API -->";
-              const end = "<!-- END API -->";
-              const startIndex = readme.indexOf(start) + start.length;
-              const endIndex = readme.indexOf(end);
-              if (startIndex !== -1 && endIndex !== -1) {
-                readme = readme.substring(0, startIndex) + "\n\n" + api + "\n\n" + readme.substring(endIndex);
-                fs.writeFileSync("README.md", readme);
+              try {
+                // Pass files array correctly to the async render method
+                const api = await jsdoc2md.render({ files: "./src/lean-state.js" });
+                let readme = fs.readFileSync("README.md", "utf8");
+                
+                const start = "<!-- START API -->";
+                const end = "<!-- END API -->";
+                const startIndex = readme.indexOf(start);
+                const endIndex = readme.indexOf(end);
+
+                if (startIndex !== -1 && endIndex !== -1) {
+                  const insertionPoint = startIndex + start.length;
+                  readme = readme.substring(0, insertionPoint) + "\n\n" + api + "\n" + readme.substring(endIndex);
+                  fs.writeFileSync("README.md", readme, "utf8");
+                  console.log("README successfully updated with API docs.");
+                } else {
+                  console.error("Comment markers not found in README.md");
+                  process.exit(1);
+                }
+              } catch (err) {
+                console.error("Failed to generate documentation:", err);
+                process.exit(1);
               }
             }
+
             run();
           '
 
