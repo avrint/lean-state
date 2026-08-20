@@ -4,6 +4,10 @@ Zero-import application kernel.
 
 ## API Reference
 
+<details>
+
+<summary>Lean State API Reference</summary>
+
 <!-- START API -->
 
 <a name="module_lean-state"></a>
@@ -241,3 +245,6 @@ Gets or merges the application configuration.
 
 
 <!-- END API -->
+
+</details>
+
