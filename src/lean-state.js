@@ -816,6 +816,7 @@
       return function () {};
     }
 
+    
     var sub = {
       handler: useWeak ? null : handler,
       handlerRef: useWeak ? new WeakRef(handler) : null,
