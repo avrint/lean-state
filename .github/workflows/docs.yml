@@ -29,7 +29,7 @@ jobs:
         run: |
           node -e '
             const fs = require("fs");
-            const jsdoc2md = require("src/lean-state.js");
+            const jsdoc2md = require("./src/lean-state.js");
             async function run() {
               const api = await jsdoc2md.render({ files: "lean-state.js" });
               let readme = fs.readFileSync("README.md", "utf8");
