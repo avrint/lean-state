@@ -35,7 +35,7 @@ jobs:
               try {
                 // Pass files array correctly to the async render method
                 const api = await jsdoc2md.render({ files: "./src/lean-state.js" });
-                let readme = fs.readFileSync("./src/docs/README.md", "utf8");
+                let readme = fs.readFileSync("../src/docs/README.md", "utf8");
                 
                 const start = "<!-- START API -->";
                 const end = "<!-- END API -->";

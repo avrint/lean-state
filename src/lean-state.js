@@ -892,7 +892,6 @@
 
     log("config updated", config());
     return config();
-
   }
 
   /**
