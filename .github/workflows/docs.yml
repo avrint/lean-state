@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'lean-state.js' # Only runs when your source file changes
+      - 'src/lean-state.js' # Only runs when your source file changes
 
 permissions:
   contents: write

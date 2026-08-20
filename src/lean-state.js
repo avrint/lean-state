@@ -984,5 +984,4 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = global.leanState;
   }
-  
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);
