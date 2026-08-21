@@ -25,7 +25,7 @@ export const config = {
     }],
     logLevel: "error", // info, warn, error
     framework: 'cucumber',
-    reporters: ['dot', 'spec'],
+    reporters: ['dot', 'spec', 'cucumberjs-json'],
     cucumberOpts: {
         require: ['features/step_definitions/**/*.js'],
         timeout: 60000
