@@ -14,8 +14,8 @@
  *   node scripts/cucumber-to-summary.js cucumber-report.json >> $GITHUB_STEP_SUMMARY
  */
 
-const fs = require('fs');
-const path = require('path');
+import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { basename } from 'path';
 
 const inputPath = process.argv[2] || 'cucumber-report.json';
 const outputPath = process.argv[3] || null;
@@ -23,11 +23,11 @@ const outputPath = process.argv[3] || null;
 // ── helpers ──────────────────────────────────────────────────────────
 
 function loadReport(file) {
-  if (!fs.existsSync(file)) {
+  if (!existsSync(file)) {
     console.error(`File not found: ${file}`);
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
+  return JSON.parse(readFileSync(file, 'utf8'));
 }
 
 function escapeHtml(text) {
@@ -126,7 +126,7 @@ function collect(features) {
     }
     if (scenarios.length) {
       tree.push({
-        feature: feature.name || path.basename(feature.uri || 'Feature'),
+        feature: feature.name || basename(feature.uri || 'Feature'),
         uri: feature.uri || '',
         scenarios,
       });
@@ -252,7 +252,7 @@ const features = Array.isArray(report) ? report : [];
 const markdown = buildMarkdown(features);
 
 if (outputPath) {
-  fs.writeFileSync(outputPath, markdown, 'utf8');
+  writeFileSync(outputPath, markdown, 'utf8');
   console.error(`Wrote ${outputPath}`);
 }
 
