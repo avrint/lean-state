@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "moduleResolution": "node",
+    "target": "ESNext",
+    "module": "ESNext",
+    "types": [
+      "node",
+      "@wdio/globals/types",
+      "@wdio/cucumber-framework"
+    ]
+  },
+  "include": ["**/*.js"]
+}
