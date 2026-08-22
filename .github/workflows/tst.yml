@@ -18,7 +18,20 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: "22"
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        id: cache-node-modules
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
 
       - name: Install dependencies
         run: npm install
@@ -36,7 +49,7 @@ jobs:
 
       - name: Test Report
         if: ${{ !cancelled() }}
-        run: node .github/workflows/scripts/cucumber-to-summary.js .tmp/json/cucumber-report.json >> $GITHUB_STEP_SUMMARY 
+        run: node .github/workflows/scripts/cucumber-to-summary.js .tmp/json/cucumber-report.json >> $GITHUB_STEP_SUMMARY
       # - name: Commit and Push Changes
       #   uses: devops-infra/action-commit-push@v1.5.0
       #   with:
