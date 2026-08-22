@@ -20,6 +20,11 @@ import { basename } from 'path';
 const inputPath = process.argv[2] || 'cucumber-report.json';
 const outputPath = process.argv[3] || null;
 
+const dashboardUrl = "https://svg.test-summary.com/dashboard.svg";
+const passIconUrl = "https://svg.test-summary.com/icon/pass.svg?s=12";
+const failIconUrl = "https://svg.test-summary.com/icon/fail.svg?s=12";
+const skipIconUrl = "https://svg.test-summary.com/icon/skip.svg?s=12";
+
 // ── helpers ──────────────────────────────────────────────────────────
 
 function loadReport(file) {
@@ -45,10 +50,10 @@ function escapeMd(text) {
 
 function statusIcon(status) {
   switch ((status || '').toLowerCase()) {
-    case 'passed':     return '✅';
-    case 'failed':     return '❌';
+    case 'passed':     return `<img src="${passIconUrl}" alt="Passed" />`;
+    case 'failed':     return `<img src="${failIconUrl}" alt="Failed" />`;
     case 'skipped':
-    case 'pending':    return '⏭️';
+    case 'pending':    return `<img src="${skipIconUrl}" alt="Skipped" />`;
     case 'undefined':
     case 'ambiguous':  return '⚠️';
     default:           return '❓';
@@ -139,22 +144,29 @@ function collect(features) {
 // ── render ───────────────────────────────────────────────────────────
 
 function renderGlobalSummary(stats) {
-  const overall = stats.failed > 0 || stats.ambiguous > 0 || stats.undefined > 0
-    ? '❌ Failed'
-    : '✅ Passed';
-
   const duration = msToHuman(stats.duration);
+  
+  // Aggregate non-passing statuses into fails or skips to align with test-summary SVG params
+  const failedCount = stats.failed + stats.ambiguous + stats.undefined;
+  const skippedCount = stats.skipped + stats.pending;
 
-  let md = `### Cucumber Results — ${overall}\n\n`;
-  md += `| Status | Count |\n|--------|------:|\n`;
-  md += `| ✅ Passed | ${stats.passed} |\n`;
-  md += `| ❌ Failed | ${stats.failed} |\n`;
-  md += `| ⏭️ Skipped / Pending | ${stats.skipped + stats.pending} |\n`;
-  if (stats.undefined) md += `| ⚠️ Undefined | ${stats.undefined} |\n`;
-  if (stats.ambiguous) md += `| ⚠️ Ambiguous | ${stats.ambiguous} |\n`;
-  md += `| **Total** | **${stats.total}** |\n`;
+  let summaryText = "";
+  if (stats.passed > 0) {
+      summaryText += `${stats.passed} passed`;
+  }
+  if (failedCount > 0) {
+      summaryText += `${summaryText ? ", " : ""}${failedCount} failed`;
+  }
+  if (skippedCount > 0) {
+      summaryText += `${summaryText ? ", " : ""}${skippedCount} skipped`;
+  }
+
+  let md = `### Cucumber Results\n\n`;
+  md += `<img src="${dashboardUrl}?p=${stats.passed}&f=${failedCount}&s=${skippedCount}" alt="${summaryText}">\n`;
+  
   if (duration) md += `\n⏱ **Duration:** ${duration}\n`;
   md += `\n---\n\n`;
+  
   return md;
 }
 
@@ -164,7 +176,7 @@ function renderIndex(tree) {
   for (const { feature, scenarios } of tree) {
     const featureAnchor = slugify(feature);
     const featureFailed = scenarios.some(s => s.status === 'failed');
-    const featureIcon = featureFailed ? '❌' : '✅';
+    const featureIcon = featureFailed ? `<img src="${failIconUrl}" alt="Failed" />` : `<img src="${passIconUrl}" alt="Passed" />`;
 
     md += `- ${featureIcon} [**${escapeMd(feature)}**](#${featureAnchor})\n`;
 
@@ -193,7 +205,7 @@ function renderSteps(scenario) {
     const dur = msToHuman(stepDurationMs(step));
     const durSuffix = dur ? ` _( ${dur} )_` : '';
 
-    body += `${icon} **${escapeHtml(keyword)}** ${escapeHtml(name)}${durSuffix}\n`;
+    body += `${icon} **${escapeHtml(keyword)}** ${escapeHtml(name)}${durSuffix}<br/>\n`;
 
     if (status === 'failed' && step.result?.error_message) {
       const err = step.result.error_message.trim().slice(0, 4000);
@@ -208,7 +220,6 @@ function renderFeatures(tree) {
 
   for (const { feature, uri, scenarios } of tree) {
     const featureAnchor = slugify(feature);
-    // Explicit HTML anchor so index links are reliable
     md += `<a id="${featureAnchor}"></a>\n`;
     md += `## ${escapeMd(feature)}\n\n`;
     if (uri) md += `📄 \`${uri}\`\n\n`;
@@ -223,7 +234,6 @@ function renderFeatures(tree) {
       md += `### ${icon} ${escapeMd(name)}\n\n`;
       if (dur) md += `⏱ ${dur}\n\n`;
 
-      // Collapsible steps
       md += `<details>\n<summary>Steps</summary>\n\n`;
       md += renderSteps(scenario);
       md += `\n</details>\n\n`;
