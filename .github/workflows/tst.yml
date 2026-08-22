@@ -21,7 +21,7 @@ jobs:
           node-version: "22"
 
       - name: Cache node modules
-        uses: actions/cache@v2
+        uses: actions/cache@v6
         id: cache-node-modules
         env:
           cache-name: cache-node-modules
