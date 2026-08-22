@@ -140,7 +140,7 @@ function getScenarioStatus (scenario) {
 }
 
 function scenarioDurationMs (scenario) {
-  return (scenario.steps || []).reduce((sum, s) => sum + stepDurationMs(s), 0);
+  return (scenario.steps || []).reduce((sum, s) => sum + stepDurationMs(s.result?.duration), 0);
 }
 
 // ── collect ──────────────────────────────────────────────────────────
@@ -241,7 +241,7 @@ function renderSteps (scenario) {
     const icon = statusIcon(status);
     const keyword = (step.keyword || '').trim();
     const name = step.name || '';
-    const dur = msToHuman(stepDurationMs(step));
+    const dur = msToHuman(stepDurationMs(step.result?.duration));
     const durSuffix = dur ? ` _( ${dur} )_` : '';
 
     body += `${icon} **${escapeHtml(keyword)}** ${escapeHtml(name)}${durSuffix}<br/>\n`;
