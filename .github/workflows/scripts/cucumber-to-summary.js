@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Cucumber JSON → GitHub Actions job summary
+ * Cucumber JSON (Folder) → GitHub Actions job summary
  *
  * Structure:
  *   1. Global summary
@@ -8,16 +8,16 @@
  *   3. Features → Scenarios → collapsible steps
  *
  * Usage:
- *   node scripts/cucumber-to-summary.js [input.json] [output.md]
+ *   node scripts/cucumber-to-summary.js [input_folder] [output.md]
  *
  * In Actions:
- *   node scripts/cucumber-to-summary.js cucumber-report.json >> $GITHUB_STEP_SUMMARY
+ *   node scripts/cucumber-to-summary.js reports/cucumber >> $GITHUB_STEP_SUMMARY
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { basename } from 'path';
+import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
+import { basename, join, extname } from 'path';
 
-const inputPath = process.argv[2] || 'cucumber-report.json';
+const inputDir = process.argv[2] || '.';
 const outputPath = process.argv[3] || null;
 
 const dashboardUrl = "https://svg.test-summary.com/dashboard.svg";
@@ -27,12 +27,45 @@ const skipIconUrl = "https://svg.test-summary.com/icon/skip.svg?s=12";
 
 // ── helpers ──────────────────────────────────────────────────────────
 
-function loadReport (file) {
-  if (!existsSync(file)) {
-    console.error(`File not found: ${file}`);
+function findJsonFiles(dir, fileList = []) {
+  if (!existsSync(dir)) {
+    console.error(`Directory not found: ${dir}`);
     process.exit(1);
   }
-  return JSON.parse(readFileSync(file, 'utf8'));
+
+  const files = readdirSync(dir);
+  for (const file of files) {
+    const filePath = join(dir, file);
+    if (statSync(filePath).isDirectory()) {
+      findJsonFiles(filePath, fileList);
+    } else if (extname(filePath) === '.json') {
+      fileList.push(filePath);
+    }
+  }
+  return fileList;
+}
+
+function loadReports(dir) {
+  const jsonFiles = findJsonFiles(dir);
+  if (jsonFiles.length === 0) {
+    console.error(`No JSON files found in directory: ${dir}`);
+    process.exit(1);
+  }
+
+  let allFeatures = [];
+  for (const file of jsonFiles) {
+    try {
+      const content = JSON.parse(readFileSync(file, 'utf8'));
+      if (Array.isArray(content)) {
+        allFeatures = allFeatures.concat(content);
+      } else {
+        allFeatures.push(content);
+      }
+    } catch (err) {
+      console.error(`Error reading or parsing ${file}: ${err.message}`);
+    }
+  }
+  return allFeatures;
 }
 
 function escapeHtml (text) {
@@ -74,7 +107,6 @@ function msToHuman(ms, options = {}) {
   let absMs = Math.abs(ms);
 
   // Time unit conversions in milliseconds
-  // (Using standard averages: 1y = 365 days, 1mo = 30.4375 days)
   const UNITS = [
     { label: compact ? 'y' : ' year',   ms: 31536000000 },
     { label: compact ? 'mo' : ' month', ms: 2629800000 },
@@ -95,7 +127,6 @@ function msToHuman(ms, options = {}) {
     if (value > 0 || (parts.length > 0 && !hideZeros)) {
       absMs %= unitMs;
 
-      // Handle pluralization for non-compact mode
       let displayLabel = label;
       if (!compact && value !== 1) {
         displayLabel += 's';
@@ -113,7 +144,6 @@ function msToHuman(ms, options = {}) {
   return isNegative ? `-${result}` : result;
 }
 
-/** GitHub-style anchor from heading text */
 function slugify (text) {
   return String(text)
     .toLowerCase()
@@ -151,7 +181,7 @@ function collect (features) {
     undefined: 0, ambiguous: 0, total: 0, duration: 0,
   };
 
-  const tree = []; // [{ feature, uri, scenarios: [{ scenario, status, duration }] }]
+  const tree = [];
 
   for (const feature of features) {
     const scenarios = [];
@@ -185,7 +215,6 @@ function collect (features) {
 function renderGlobalSummary (stats) {
   const duration = msToHuman(stats.duration);
 
-  // Aggregate non-passing statuses into fails or skips to align with test-summary SVG params
   const failedCount = stats.failed + stats.ambiguous + stats.undefined;
   const skippedCount = stats.skipped + stats.pending;
 
@@ -296,8 +325,7 @@ function buildMarkdown (features) {
 
 // ── main ─────────────────────────────────────────────────────────────
 
-const report = loadReport(inputPath);
-const features = Array.isArray(report) ? report : [];
+const features = loadReports(inputDir);
 const markdown = buildMarkdown(features);
 
 if (outputPath) {
