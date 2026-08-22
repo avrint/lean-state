@@ -183,7 +183,7 @@ function collect (features) {
 // ── render ───────────────────────────────────────────────────────────
 
 function renderGlobalSummary (stats) {
-  const duration = msToHuman(stepDurationMs(stats.duration));
+  const duration = msToHuman(stats.duration);
 
   // Aggregate non-passing statuses into fails or skips to align with test-summary SVG params
   const failedCount = stats.failed + stats.ambiguous + stats.undefined;
