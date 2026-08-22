@@ -123,8 +123,8 @@ function slugify (text) {
     .replace(/^-|-$/g, '');
 }
 
-function stepDurationMs (step) {
-  return d / 1e6
+function stepDurationMs (d) {
+  return d / 1e6;
 }
 
 function getScenarioStatus (scenario) {
