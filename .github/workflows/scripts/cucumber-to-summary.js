@@ -267,7 +267,7 @@ function renderFeatures (tree) {
       const name = scenario.name || 'Scenario';
       const anchor = slugify(`${feature}-${name}`);
       const icon = statusIcon(status);
-      const dur = msToHuman(stepDurationMs(duration));
+      const dur = msToHuman(duration);
 
       md += `<a id="${anchor}"></a>\n`;
       md += `### ${icon} ${escapeMd(name)}\n\n`;
