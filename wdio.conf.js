@@ -1,4 +1,7 @@
 
+import fs from 'fs';
+import path from 'path';
+
 /** @type {import('@wdio/types').Options.Testrunner }*/
 /** @type {import('@wdio/types').Capabilities.WithRequestedTestrunnerCapabilities }*/
 export const config = {
@@ -29,5 +32,23 @@ export const config = {
     cucumberOpts: {
         require: ['features/step_definitions/**/*.js'],
         timeout: 60000
-    }
+    },
+    before: function (_capabilities, _specs) {
+        const folderPath = '.tmp/json';
+
+        // Function to clear the folder
+        const clearFolder = (folder) => {
+            fs.readdir(folder, (err, files) => {
+                if (err) return console.error(err);
+                for (const file of files) {
+                    fs.unlink(path.join(folder, file), (err) => {
+                        if (err) console.error(err);
+                    });
+                }
+            });
+        };
+
+        clearFolder(folderPath);
+    },
+
 };
