@@ -27,7 +27,7 @@ const skipIconUrl = "https://svg.test-summary.com/icon/skip.svg?s=12";
 
 // ── helpers ──────────────────────────────────────────────────────────
 
-function loadReport(file) {
+function loadReport (file) {
   if (!existsSync(file)) {
     console.error(`File not found: ${file}`);
     process.exit(1);
@@ -35,7 +35,7 @@ function loadReport(file) {
   return JSON.parse(readFileSync(file, 'utf8'));
 }
 
-function escapeHtml(text) {
+function escapeHtml (text) {
   return String(text ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -43,35 +43,47 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;');
 }
 
-function escapeMd(text) {
+function escapeMd (text) {
   // minimal escaping for link text / table cells
   return String(text ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
 
-function statusIcon(status) {
+function statusIcon (status) {
   switch ((status || '').toLowerCase()) {
-    case 'passed':     return `<img src="${passIconUrl}" alt="Passed" />`;
-    case 'failed':     return `<img src="${failIconUrl}" alt="Failed" />`;
+    case 'passed': return `<img src="${passIconUrl}" alt="Passed" />`;
+    case 'failed': return `<img src="${failIconUrl}" alt="Failed" />`;
     case 'skipped':
-    case 'pending':    return `<img src="${skipIconUrl}" alt="Skipped" />`;
+    case 'pending': return `<img src="${skipIconUrl}" alt="Skipped" />`;
     case 'undefined':
-    case 'ambiguous':  return '⚠️';
-    default:           return '❓';
+    case 'ambiguous': return '⚠️';
+    default: return '❓';
   }
 }
 
-function msToHuman(ms) {
+function msToHuman (ms) {
   if (ms == null || isNaN(ms) || ms === 0) return '';
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  const s = ms / 1000;
-  if (s < 60) return `${s.toFixed(1)}s`;
-  const m = Math.floor(s / 60);
-  const rem = Math.round(s % 60);
-  return `${m}m ${rem}s`;
+
+  const isNegative = ms < 0;
+  const absMs = Math.abs(ms);
+
+  let result = '';
+
+  if (absMs < 1000) {
+    result = `${Math.round(absMs)}ms`;
+  } else if (absMs < 60000) {
+    result = `${(absMs / 1000).toFixed(1)}s`;
+  } else {
+    let totalSeconds = Math.round(absMs / 1000);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    result = `${m}m ${s}s`;
+  }
+
+  return isNegative ? `-${result}` : result;
 }
 
 /** GitHub-style anchor from heading text */
-function slugify(text) {
+function slugify (text) {
   return String(text)
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
@@ -80,7 +92,7 @@ function slugify(text) {
     .replace(/^-|-$/g, '');
 }
 
-function stepDurationMs(step) {
+function stepDurationMs (step) {
   const d = step.result?.duration;
   if (d == null) return 0;
   // Cucumber-JS classic JSON: duration is in nanoseconds
@@ -88,7 +100,7 @@ function stepDurationMs(step) {
   return d > 1e10 ? d / 1e6 : d;
 }
 
-function getScenarioStatus(scenario) {
+function getScenarioStatus (scenario) {
   const steps = scenario.steps || [];
   if (!steps.length) return 'unknown';
   if (steps.some(s => s.result?.status === 'failed')) return 'failed';
@@ -100,13 +112,13 @@ function getScenarioStatus(scenario) {
   return 'unknown';
 }
 
-function scenarioDurationMs(scenario) {
+function scenarioDurationMs (scenario) {
   return (scenario.steps || []).reduce((sum, s) => sum + stepDurationMs(s), 0);
 }
 
 // ── collect ──────────────────────────────────────────────────────────
 
-function collect(features) {
+function collect (features) {
   const stats = {
     passed: 0, failed: 0, skipped: 0, pending: 0,
     undefined: 0, ambiguous: 0, total: 0, duration: 0,
@@ -143,35 +155,35 @@ function collect(features) {
 
 // ── render ───────────────────────────────────────────────────────────
 
-function renderGlobalSummary(stats) {
+function renderGlobalSummary (stats) {
   const duration = msToHuman(stats.duration);
-  
+
   // Aggregate non-passing statuses into fails or skips to align with test-summary SVG params
   const failedCount = stats.failed + stats.ambiguous + stats.undefined;
   const skippedCount = stats.skipped + stats.pending;
 
   let summaryText = "";
   if (stats.passed > 0) {
-      summaryText += `${stats.passed} passed`;
+    summaryText += `${stats.passed} passed`;
   }
   if (failedCount > 0) {
-      summaryText += `${summaryText ? ", " : ""}${failedCount} failed`;
+    summaryText += `${summaryText ? ", " : ""}${failedCount} failed`;
   }
   if (skippedCount > 0) {
-      summaryText += `${summaryText ? ", " : ""}${skippedCount} skipped`;
+    summaryText += `${summaryText ? ", " : ""}${skippedCount} skipped`;
   }
 
   let md = `### Cucumber Results\n\n`;
   md += `<img src="${dashboardUrl}?p=${stats.passed}&f=${failedCount}&s=${skippedCount}" alt="${summaryText}">\n`;
-  
+
   if (duration) md += `\n⏱ **Duration:** ${duration}\n`;
   md += `\n---\n\n`;
-  
+
   return md;
 }
 
-function renderIndex(tree) {
-  let md = `### Index\n\n`;
+function renderIndex (tree) {
+  let md = `### Features\n\n`;
 
   for (const { feature, scenarios } of tree) {
     const featureAnchor = slugify(feature);
@@ -192,7 +204,7 @@ function renderIndex(tree) {
   return md;
 }
 
-function renderSteps(scenario) {
+function renderSteps (scenario) {
   const steps = scenario.steps || [];
   if (!steps.length) return '_No steps_\n';
 
@@ -215,7 +227,7 @@ function renderSteps(scenario) {
   return body;
 }
 
-function renderFeatures(tree) {
+function renderFeatures (tree) {
   let md = '';
 
   for (const { feature, uri, scenarios } of tree) {
@@ -245,7 +257,7 @@ function renderFeatures(tree) {
   return md;
 }
 
-function buildMarkdown(features) {
+function buildMarkdown (features) {
   const { stats, tree } = collect(features);
 
   let md = '';
