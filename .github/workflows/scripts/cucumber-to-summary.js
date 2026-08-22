@@ -60,25 +60,56 @@ function statusIcon (status) {
   }
 }
 
-function msToHuman (ms) {
+function msToHuman(ms, options = {}) {
   if (ms == null || isNaN(ms) || ms === 0) return '';
 
+  const {
+    maxUnits = 7,         // Limit output depth (e.g., maxUnits: 2 -> '1y 2mo')
+    compact = true,        // `true` for '1y 2m', `false` for '1 year 2 months'
+    includeMs = true,      // Set to false to omit raw millisecond remainders
+    hideZeros = false      // Set to true to drop 0-value intermediate units ('1y 2d')
+  } = options;
+
   const isNegative = ms < 0;
-  const absMs = Math.abs(ms);
+  let absMs = Math.abs(ms);
 
-  let result = '';
+  // Time unit conversions in milliseconds
+  // (Using standard averages: 1y = 365 days, 1mo = 30.4375 days)
+  const UNITS = [
+    { label: compact ? 'y' : ' year',   ms: 31536000000 },
+    { label: compact ? 'mo' : ' month', ms: 2629800000 },
+    { label: compact ? 'd' : ' day',    ms: 86400000 },
+    { label: compact ? 'h' : ' hour',   ms: 3600000 },
+    { label: compact ? 'm' : ' min',    ms: 60000 },
+    { label: compact ? 's' : ' sec',    ms: 1000 },
+    { label: compact ? 'ms' : ' ms',    ms: 1 }
+  ];
 
-  if (absMs < 1000) {
-    result = `${Math.round(absMs)}ms`;
-  } else if (absMs < 60000) {
-    result = `${(absMs / 1000).toFixed(1)}s`;
-  } else {
-    let totalSeconds = Math.round(absMs / 1000);
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    result = `${m}m ${s}s`;
+  const parts = [];
+
+  for (const { label, ms: unitMs } of UNITS) {
+    if (label.includes('ms') && !includeMs) continue;
+
+    const value = Math.floor(absMs / unitMs);
+
+    if (value > 0 || (parts.length > 0 && !hideZeros)) {
+      absMs %= unitMs;
+
+      // Handle pluralization for non-compact mode
+      let displayLabel = label;
+      if (!compact && value !== 1) {
+        displayLabel += 's';
+      }
+
+      parts.push(`${value}${displayLabel}`);
+    }
+
+    if (parts.length === maxUnits) break;
   }
 
+  if (parts.length === 0) return '';
+
+  const result = parts.join(' ');
   return isNegative ? `-${result}` : result;
 }
 
@@ -93,11 +124,7 @@ function slugify (text) {
 }
 
 function stepDurationMs (step) {
-  const d = step.result?.duration;
-  if (d == null) return 0;
-  // Cucumber-JS classic JSON: duration is in nanoseconds
-  // Some runners already use ms — heuristic: if > 1e10 treat as ns
-  return d > 1e10 ? d / 1e6 : d;
+  return d / 1e6
 }
 
 function getScenarioStatus (scenario) {
@@ -156,7 +183,7 @@ function collect (features) {
 // ── render ───────────────────────────────────────────────────────────
 
 function renderGlobalSummary (stats) {
-  const duration = msToHuman(stats.duration);
+  const duration = msToHuman(stepDurationMs(stats.duration));
 
   // Aggregate non-passing statuses into fails or skips to align with test-summary SVG params
   const failedCount = stats.failed + stats.ambiguous + stats.undefined;
@@ -240,7 +267,7 @@ function renderFeatures (tree) {
       const name = scenario.name || 'Scenario';
       const anchor = slugify(`${feature}-${name}`);
       const icon = statusIcon(status);
-      const dur = msToHuman(duration);
+      const dur = msToHuman(stepDurationMs(duration));
 
       md += `<a id="${anchor}"></a>\n`;
       md += `### ${icon} ${escapeMd(name)}\n\n`;
