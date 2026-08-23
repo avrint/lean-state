@@ -50,7 +50,7 @@ jobs:
       #   run: node .github/workflows/scripts/cucumber-to-summary.js .tmp/json/ >> $GITHUB_STEP_SUMMARY
 
       - name: Cucumber GitHub Summary 
-        uses: avrint/cucumber-summary
+        uses: avrint/cucumber-summary@main
         with:
           report_path: .tmp/json/
 
