@@ -49,7 +49,6 @@ jobs:
       #   if: ${{ !cancelled() }}
       #   run: node .github/workflows/scripts/cucumber-to-summary.js .tmp/json/ >> $GITHUB_STEP_SUMMARY
 
-
       - name: Cucumber GitHub Summary 
         uses: avrint/cucumber-summary@v1
         with:
