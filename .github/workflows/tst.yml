@@ -51,7 +51,7 @@ jobs:
 
 
       - name: Cucumber GitHub Summary 
-        uses: avrint/cucumber-summary@1.0.0
+        uses: avrint/cucumber-summary@v1
         with:
           report_path: .tmp/json/
 
