@@ -82,6 +82,6 @@ jobs:
           echo "$REPORT_DATA" > .tmp/json/cucumber-report.json
 
       - name: Cucumber GitHub Summary 
-        uses: avrint/cucumber-summary@main
+        uses: avrint/cucumber-summary@v1
         with:
           report_path: .tmp/json/
