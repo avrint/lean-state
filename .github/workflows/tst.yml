@@ -7,55 +7,102 @@ on:
 
 permissions:
   contents: write
+  actions: write # Required for the cleanup job to delete artifacts
 
 jobs:
-  test:
+  prep:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
 
       - name: Cache node modules
-        uses: actions/cache@v6
+        uses: actions/cache@v4
         id: cache-node-modules
-        env:
-          cache-name: cache-node-modules
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm install
+
+  test:
+    needs: prep
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
 
       - name: Run Tests
         run: npm tst
 
       - name: Rename JSON report to cucumber-report.json
-        if: ${{ !cancelled() }}
+        if: always()
         run: |
+          mkdir -p .tmp/json
           file=$(find .tmp/json -maxdepth 1 -name "*.json" | head -n 1)
           if [ -n "$file" ]; then
             mv "$file" .tmp/json/cucumber-report.json
           fi
 
-      # - name: Test Report
-      #   if: ${{ !cancelled() }}
-      #   run: node .github/workflows/scripts/cucumber-to-summary.js .tmp/json/ >> $GITHUB_STEP_SUMMARY
+      - name: Upload Cucumber JSON Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-json-report
+          path: .tmp/json/
+          retention-days: 1 # Shortest possible retention as a fallback
+
+  report:
+    needs: test
+    if: always() # Ensure report runs even if tests fail
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Cucumber JSON Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cucumber-json-report
+          path: .tmp/json/
 
       - name: Cucumber GitHub Summary 
         uses: avrint/cucumber-summary@main
         with:
           report_path: .tmp/json/
 
-      #   uses: devops-infra/action-commit-push@v1.5.0
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     commit_message: "[skip ci] docs: automatic API documentation update"
-      #     branch: main
+  cleanup:
+    needs: report
+    if: always() # Run cleanup regardless of previous job statuses
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Delete Artifacts
+        run: |
+          # Fetch the specific artifact ID and delete it to free up hosting space
+          ARTIFACT_ID=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --jq '.artifacts[] | select(.name == "cucumber-json-report") | .id')
+          if [ -n "$ARTIFACT_ID" ]; then
+            gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID
+            echo "Successfully deleted artifact to save space."
+          else
+            echo "Artifact not found."
+          fi
