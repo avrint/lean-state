@@ -12,20 +12,19 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout Source Repo (avrint/lean-state)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Checkout Target Repo (avrint/cdn)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: 'avrint/cdn'
-          token: ${{ secrets.GITHUB_TOKEN }}
           path: 'cdn'
 
       - name: Copy File and Push Changes
         run: |
           # 1. Ensure target directory exists and copy file
           mkdir -p cdn/packages/lean-state
-          cp ./src/lean-state.js cdn/packages/lean-state/lean-state.js
+          cp ./src/lean-state.js ./cdn/packages/lean-state/lean-state.js
 
           # 2. Change directory, commit, and push
           cd cdn
