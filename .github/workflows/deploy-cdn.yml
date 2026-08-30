@@ -14,11 +14,22 @@ jobs:
       - name: Checkout Source Repo (avrint/lean-state)
         uses: actions/checkout@v7
 
+      - name: Generate Token for target repo
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: 'avrint'
+          repositories: 'cdn'
+
       - name: Checkout Target Repo (avrint/cdn)
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           repository: 'avrint/cdn'
+          token: ${{ steps.generate_token.outputs.token }}
           path: 'cdn'
+          
 
       - name: Copy File and Push Changes
         run: |
