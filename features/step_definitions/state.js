@@ -56,7 +56,7 @@ When(/^I subscribe to the key "([^"]*)"$/, async (key) => {
 When(/^I subscribe to the bus channel "([^"]*)"$/, async (channel) => {
     await browser.execute((ch) => {
         window.__busSubs = window.__busSubs || {};
-        window.leanState.bus.subscribe(ch, (payload) => {
+        window.leanState.bus.on(ch, (payload) => {
             window.__busSubs[ch] = payload;
         });
     }, channel);

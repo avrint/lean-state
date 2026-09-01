@@ -798,14 +798,14 @@
   /**
    * Subscribes a handler to a specific bus channel.
    * 
-   * @alias subscribe
+   * @alias on
    * @memberof module:lean-state.bus
    * @param {string} channel - The channel to listen to.
    * @param {function(Object, BusMessage): (void|Promise)} handler - The callback to execute when a message arrives.
    * @param {BusOptions} [options] - Liveness context and memory management settings.
    * @returns {function(): void} An unsubscribe function.
    */
-  function busSubscribe(channel, handler, options) {
+  function busOn(channel, handler, options) {
     if (typeof handler !== "function") return function () {};
     options = options || {};
 
@@ -813,7 +813,7 @@
     var useWeak = options.weak === true && HAS_WEAKREF;
 
     if (resolved.handshake && !isContextAlive(context)) {
-      log("subscribe rejected; context already dead", channel);
+      log("on rejected; context already dead", channel);
       return function () {};
     }
     
@@ -960,7 +960,7 @@
     subscribe: subscribeState,
     bus: {
       send: busSend,
-      subscribe: busSubscribe,
+      on: busOn,
       prune: busPrune,
     },
     get identity() {
