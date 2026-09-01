@@ -63,7 +63,7 @@ message bus, and cross-tab bridge. Attaches globally to `window.leanState`.
         * [.bus](#module_lean-state.bus) : <code>object</code>
             * [prune()](#prune) ⇒ <code>number</code>
             * [send(channel, [message])](#send) ⇒ <code>Promise.&lt;BusMessage&gt;</code>
-            * [subscribe(channel, handler, [options])](#subscribe) ⇒ <code>function</code>
+            * [on(channel, handler, [options])](#on) ⇒ <code>function</code>
         * [.get(key)](#module_lean-state.get) ⇒ <code>\*</code>
         * [.set(key, value, [options])](#module_lean-state.set) ⇒ <code>\*</code>
         * [.remove(key)](#module_lean-state.remove)
@@ -104,7 +104,7 @@ Cross-tab message bus and event subscription manager.
 * [.bus](#module_lean-state.bus) : <code>object</code>
     * [prune()](#prune) ⇒ <code>number</code>
     * [send(channel, [message])](#send) ⇒ <code>Promise.&lt;BusMessage&gt;</code>
-    * [subscribe(channel, handler, [options])](#subscribe) ⇒ <code>function</code>
+    * [on(channel, handler, [options])](#on) ⇒ <code>function</code>
 
 <a name="prune"></a>
 
@@ -124,9 +124,9 @@ Publishes a message to a specific bus channel.
 | channel | <code>string</code> | The destination channel name. |
 | [message] | <code>Object</code> | The payload to send. |
 
-<a name="subscribe"></a>
+<a name="on"></a>
 
-#### bussubscribe(channel, handler, [options]) ⇒ <code>function</code>
+#### buson(channel, handler, [options]) ⇒ <code>function</code>
 Subscribes a handler to a specific bus channel.
 
 **Returns**: <code>function</code> - An unsubscribe function.  
