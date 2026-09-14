@@ -75,7 +75,7 @@
    * @param {string} str - String to hash.
    * @returns {string} 8-character hex string.
    */
-  function hash32(str) {
+  function hash32 (str) {
     var h = 0x811c9dc5;
     for (var i = 0; i < str.length; i++) {
       h ^= str.charCodeAt(i);
@@ -92,7 +92,7 @@
    * @param {string} instance - Instance ID.
    * @returns {string} Hashed runtime ID.
    */
-  function makeRuntimeId(app, namespace, instance) {
+  function makeRuntimeId (app, namespace, instance) {
     return hash32(String(app) + "\0" + String(namespace) + "\0" + String(instance));
   }
 
@@ -101,7 +101,7 @@
    * @private
    * @returns {string} Instance token.
    */
-  function getOrCreateInstanceId() {
+  function getOrCreateInstanceId () {
     try {
       if (typeof global.name === "string" && global.name.indexOf("lean-") === 0) {
         return global.name.slice(5);
@@ -109,7 +109,7 @@
       var token = "w" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
       try {
         global.name = "lean-" + token;
-      } catch (_) {}
+      } catch (_) { }
       return token;
     } catch (_) {
       return "w" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
@@ -125,7 +125,7 @@
    * @private
    * @returns {StorageAdapter}
    */
-  function createMemoryStorage() {
+  function createMemoryStorage () {
     var map = Object.create(null);
     return {
       type: "memory",
@@ -133,7 +133,7 @@
       setItem: function (k, v) { map[k] = String(v); },
       removeItem: function (k) { delete map[k]; },
       key: function (i) { return Object.keys(map)[i] || null; },
-      get length() { return Object.keys(map).length; },
+      get length () { return Object.keys(map).length; },
     };
   }
 
@@ -144,7 +144,7 @@
    * @param {string} label - Label for the storage type ('local' or 'session').
    * @returns {StorageAdapter|null}
    */
-  function wrapWebStorage(store, label) {
+  function wrapWebStorage (store, label) {
     if (!store) return null;
     try {
       var testKey = "lean_test";
@@ -156,10 +156,10 @@
     return {
       type: label,
       getItem: function (k) { try { return store.getItem(k); } catch (_) { return null; } },
-      setItem: function (k, v) { try { store.setItem(k, v); } catch (_) {} },
-      removeItem: function (k) { try { store.removeItem(k); } catch (_) {} },
+      setItem: function (k, v) { try { store.setItem(k, v); } catch (_) { } },
+      removeItem: function (k) { try { store.removeItem(k); } catch (_) { } },
       key: function (i) { try { return store.key(i); } catch (_) { return null; } },
-      get length() { try { return store.length; } catch (_) { return 0; } },
+      get length () { try { return store.length; } catch (_) { return 0; } },
     };
   }
 
@@ -172,7 +172,7 @@
     namespace: "default",
     scope: "window",
     storage: "auto",
-    throttle: 420,
+    throttle: 42,
     debug: false,
     handshake: true,
     heartbeat: 30000,
@@ -192,10 +192,10 @@
    * @param {string} preference - 'auto', 'memory', 'local', or 'session'.
    * @returns {StorageAdapter}
    */
-  function resolveStorage(preference) {
+  function resolveStorage (preference) {
     var local = wrapWebStorage(typeof global.localStorage !== "undefined" ? global.localStorage : null, "local");
     var session = wrapWebStorage(typeof global.sessionStorage !== "undefined" ? global.sessionStorage : null, "session");
-    
+
     if (preference === "memory") return memoryFallback;
     if (preference === "local") return local || memoryFallback;
     if (preference === "session") return session || memoryFallback;
@@ -207,10 +207,10 @@
    * @private
    * @returns {Object} Internal resolved configuration.
    */
-  function computeResolved() {
+  function computeResolved () {
     var c = Object.assign({}, DEFAULTS, userConfig);
     storageBackend = resolveStorage(c.storage);
-    
+
     var runtimeApp = c.app;
     var runtimeNamespace = c.namespace;
     var effectiveInstance = c.scope === "app" ? "shared" : instanceId;
@@ -239,9 +239,9 @@
    * Initializes the cross-tab BroadcastChannel bridge if available and configured.
    * @private
    */
-  function setupBridge() {
+  function setupBridge () {
     if (bridge) {
-      try { bridge.close(); } catch (_) {}
+      try { bridge.close(); } catch (_) { }
       bridge = null;
     }
     if (!HAS_BROADCAST || !resolved.bridgeChannel) return;
@@ -255,7 +255,7 @@
           busSend(event.data.channel, payload);
         }
       });
-    } catch (_) {}
+    } catch (_) { }
   }
 
   setupBridge();
@@ -267,14 +267,14 @@
    * @param {string} persistence - Persistence level.
    * @returns {string} Formatted storage key.
    */
-  function storageKey(key, persistence) {
+  function storageKey (key, persistence) {
     var r = resolved;
     var prefix = "lean:" + r.app + ":" + r.namespace + ":" + (r.scope === "app" ? "app" : r._rawInstance) + ":";
-    
+
     if (persistence === "session") prefix += "s:";
     else if (persistence === "persistent") prefix += "p:";
     else prefix += "t:";
-    
+
     return prefix + key;
   }
 
@@ -284,12 +284,12 @@
    * @param {string} persistence - Level ('transient', 'session', 'persistent').
    * @returns {StorageAdapter}
    */
-  function getStorageForPersistence(persistence) {
+  function getStorageForPersistence (persistence) {
     if (persistence === "transient") return memoryFallback;
-    
+
     var sessionStore = wrapWebStorage(typeof global.sessionStorage !== "undefined" ? global.sessionStorage : null, "session");
     if (persistence === "session") return sessionStore || memoryFallback;
-    
+
     var localStore = wrapWebStorage(typeof global.localStorage !== "undefined" ? global.localStorage : null, "local");
     return localStore || sessionStore || memoryFallback;
   }
@@ -307,9 +307,27 @@
    * Internal logger. Output depends on `config.debug`.
    * @private
    */
-  function log() {
+  function log () {
     if (resolved && resolved.debug && typeof console !== "undefined") {
       console.log.apply(console, ["[lean-state]"].concat(Array.prototype.slice.call(arguments)));
+    }
+  }
+
+
+  /**
+   * Updates or removes a custom CSS property on documentElement matching the state key.
+   * @private
+   * @param {string} key - State key.
+   * @param {*} value - Value to reflect in CSS.
+   */
+  function updateCssVariable (key, value) {
+    if (typeof document === "undefined" || !document.documentElement) return;
+    var propName = "--ls-" + key;
+    if (value === undefined || value === null) {
+      document.documentElement.style.removeProperty(propName);
+    } else {
+      var strVal = typeof value === "object" ? JSON.stringify(value) : String(value);
+      document.documentElement.style.setProperty(propName, strVal);
     }
   }
 
@@ -321,7 +339,7 @@
    * @param {string} [label] - Context string for error logging.
    * @returns {*}
    */
-  function safeCall(fn, args, label) {
+  function safeCall (fn, args, label) {
     try {
       return fn.apply(null, args);
     } catch (err) {
@@ -329,19 +347,18 @@
         console.error("[lean-state] handler error" + (label ? " (" + label + ")" : ""), err);
       }
       if (typeof leanState !== "undefined" && leanState._onError) {
-        try { leanState._onError(err, label); } catch (_) {}
+        try { leanState._onError(err, label); } catch (_) { }
       }
       return undefined;
     }
   }
 
   /**
-   * Pushes state updates to all subscribers for a given key.
+   * Pushes state updates to custom CSS variables and all key subscribers.
    * @private
-   * @param {string} key - State key.
-   * @param {*} value - New value.
    */
   function notifyKey(key, value) {
+    updateCssVariable(key, value); // Sync reactive CSS property
     var set = keySubscribers[key];
     if (!set) return;
     set.forEach(function (handler) {
@@ -353,15 +370,15 @@
    * Debounces persistence operations based on configured throttle time.
    * @private
    */
-  function schedulePersistAndNotify() {
+  function schedulePersistAndNotify () {
     if (persistTimer != null) return;
     var delay = resolved.throttle;
-    
+
     if (delay <= 0) {
       flushPersistAndNotify();
       return;
     }
-    
+
     persistTimer = setTimeout(function () {
       persistTimer = null;
       flushPersistAndNotify();
@@ -372,40 +389,40 @@
    * Processes the pending persistence queue, writing to Web Storage and notifying listeners.
    * @private
    */
-  function flushPersistAndNotify() {
+  function flushPersistAndNotify () {
     var keys = Object.keys(pendingPersist);
     pendingPersist = Object.create(null);
-    
+
     keys.forEach(function (key) {
       var entry = memoryState[key];
-      
+
       if (!entry) {
         try {
           getStorageForPersistence("persistent").removeItem(storageKey(key, "persistent"));
           getStorageForPersistence("session").removeItem(storageKey(key, "session"));
-        } catch (_) {}
+        } catch (_) { }
         notifyKey(key, undefined);
         return;
       }
-      
+
       var persistence = entry.persistence || "transient";
       if (persistence === "transient") {
         notifyKey(key, entry.value);
         return;
       }
-      
+
       var store = getStorageForPersistence(persistence);
       var sk = storageKey(key, persistence);
-      
+
       try {
         store.setItem(sk, JSON.stringify({ v: entry.value, t: Date.now() }));
-      } catch (_) {}
+      } catch (_) { }
       notifyKey(key, entry.value);
     });
   }
 
   /**
-   * Reads existing data from Web Storage into memory on boot or config change.
+   * Hydrates state from Web Storage and applies matching CSS variables on boot.
    * @private
    */
   function hydrateFromStorage() {
@@ -429,10 +446,9 @@
           
           try {
             var parsed = JSON.parse(raw);
-            memoryState[logical] = {
-              value: parsed && "v" in parsed ? parsed.v : parsed,
-              persistence: p,
-            };
+            var val = parsed && "v" in parsed ? parsed.v : parsed;
+            memoryState[logical] = { value: val, persistence: p };
+            updateCssVariable(logical, val); // Sync hydrated value to CSS
           } catch (_) {}
         }
       } catch (_) {}
@@ -446,7 +462,7 @@
    * @param {string} key - The state key to retrieve.
    * @returns {*} The stored value, or undefined if not found.
    */
-  function get(key) {
+  function get (key) {
     if (key in memoryState) return memoryState[key].value;
     return undefined;
   }
@@ -460,11 +476,11 @@
    * @param {StateOptions} [options] - Storage duration options.
    * @returns {*} The value that was set.
    */
-  function set(key, value, options) {
+  function set (key, value, options) {
     options = options || {};
     var persistence = options.persistence || "transient";
     if (persistence !== "session" && persistence !== "persistent") persistence = "transient";
-    
+
     memoryState[key] = { value: value, persistence: persistence };
     pendingPersist[key] = true;
     schedulePersistAndNotify();
@@ -477,7 +493,7 @@
    * @memberof module:lean-state
    * @param {string} key - The state key to remove.
    */
-  function remove(key) {
+  function remove (key) {
     if (key in memoryState) {
       delete memoryState[key];
       pendingPersist[key] = true;
@@ -492,7 +508,7 @@
    * @param {string} key - The state key to verify.
    * @returns {boolean} True if the key exists, false otherwise.
    */
-  function has(key) {
+  function has (key) {
     return key in memoryState;
   }
 
@@ -505,13 +521,13 @@
    * @param {function(*, string): void} handler - Callback invoked when the key changes.
    * @returns {function(): void} An unsubscribe function to stop watching.
    */
-  function subscribeState(key, handler) {
-    if (typeof handler !== "function") return function () {};
+  function subscribeState (key, handler) {
+    if (typeof handler !== "function") return function () { };
     if (!keySubscribers[key]) keySubscribers[key] = new Set();
-    
+
     keySubscribers[key].add(handler);
-    
-    return function unsubscribe() {
+
+    return function unsubscribe () {
       if (keySubscribers[key]) {
         keySubscribers[key].delete(handler);
         if (keySubscribers[key].size === 0) delete keySubscribers[key];
@@ -530,7 +546,7 @@
    * @param {*} context - The object to evaluate.
    * @returns {boolean}
    */
-  function isContextAlive(context) {
+  function isContextAlive (context) {
     try {
       if (context == null) {
         if (typeof global.closed === "boolean" && global.closed) return false;
@@ -540,20 +556,20 @@
       if (typeof context === "function") return !!context();
       if (typeof context === "object" && typeof context.alive === "function") return !!context.alive();
       if (typeof context.closed === "boolean") return !context.closed;
-      
+
       if (context.nodeType === 9) { // Document node
         var view = context.defaultView;
         if (view && typeof view.closed === "boolean" && view.closed) return false;
         return !!context.documentElement;
       }
-      
+
       if (typeof context.nodeType === "number") { // DOM Element
         if (typeof context.isConnected === "boolean") return context.isConnected;
         var root = context;
         while (root && root.parentNode) root = root.parentNode;
         return !!(root && root.nodeType === 9);
       }
-      
+
       return true;
     } catch (_) {
       return false;
@@ -569,7 +585,7 @@
    * @param {string} name - Channel name.
    * @returns {Object} Internal channel structure.
    */
-  function ensureChannel(name) {
+  function ensureChannel (name) {
     if (!channels[name]) {
       channels[name] = {
         queue: [],
@@ -587,7 +603,7 @@
    * @param {Object} sub - Subscription object.
    * @returns {Function|null}
    */
-  function getHandler(sub) {
+  function getHandler (sub) {
     if (sub.dead) return null;
     if (sub.handlerRef) {
       var h = sub.handlerRef.deref();
@@ -601,7 +617,7 @@
    * @private
    * @param {Object} sub - Subscription object.
    */
-  function dropSubscription(sub) {
+  function dropSubscription (sub) {
     if (!sub || sub.dead) return;
     sub.dead = true;
     if (sub.timer != null) {
@@ -619,7 +635,7 @@
    * @param {Object} sub - Subscription object.
    * @returns {boolean}
    */
-  function handshake(sub) {
+  function handshake (sub) {
     if (!sub || sub.dead) return false;
     if (!getHandler(sub)) {
       dropSubscription(sub);
@@ -638,7 +654,7 @@
    * @param {string} name - Channel name.
    * @returns {number} Amount of dropped subscriptions.
    */
-  function pruneChannel(name) {
+  function pruneChannel (name) {
     var ch = channels[name];
     if (!ch) return 0;
     var dropped = 0;
@@ -655,7 +671,7 @@
    * @memberof module:lean-state.bus
    * @returns {number} The total number of dead subscriptions dropped.
    */
-  function busPrune() {
+  function busPrune () {
     var dropped = 0;
     Object.keys(channels).forEach(function (name) {
       dropped += pruneChannel(name);
@@ -667,20 +683,20 @@
    * Sets up the global heartbeat to periodically clean up abandoned bus listeners.
    * @private
    */
-  function ensureGlobalHeartbeat() {
+  function ensureGlobalHeartbeat () {
     if (globalHeartbeatTimer != null) {
       clearInterval(globalHeartbeatTimer);
       globalHeartbeatTimer = null;
     }
     var ms = resolved.heartbeat;
     if (!ms || ms <= 0) return;
-    
+
     globalHeartbeatTimer = setInterval(function () {
       busPrune();
     }, ms);
-    
+
     if (typeof globalHeartbeatTimer.unref === "function") {
-      try { globalHeartbeatTimer.unref(); } catch (_) {}
+      try { globalHeartbeatTimer.unref(); } catch (_) { }
     }
   }
 
@@ -692,9 +708,9 @@
    * @param {string} channel - Channel name.
    * @param {Object} payload - User payload.
    */
-  function broadcastLocalMessage(channel, payload) {
+  function broadcastLocalMessage (channel, payload) {
     if (bridge && payload && !payload._fromBridge) {
-      try { bridge.postMessage({ channel: channel, payload: payload }); } catch (_) {}
+      try { bridge.postMessage({ channel: channel, payload: payload }); } catch (_) { }
     }
   }
 
@@ -703,14 +719,14 @@
    * @private
    * @param {string} name - Channel name.
    */
-  function processChannel(name) {
+  function processChannel (name) {
     var ch = channels[name];
     if (!ch || ch.processing) return;
     ch.processing = true;
 
     pruneChannel(name);
 
-    function next() {
+    function next () {
       if (!ch.queue.length) {
         ch.processing = false;
         return;
@@ -719,7 +735,7 @@
       var subs = Array.from(ch.subscribers);
       var i = 0;
 
-      function runOne() {
+      function runOne () {
         while (i < subs.length) {
           var sub = subs[i++];
           if (sub.dead || !handshake(sub)) continue;
@@ -772,13 +788,13 @@
    * @param {Object} [message] - The payload to send.
    * @returns {Promise<BusMessage>} A promise that resolves when all subscribers have processed the message.
    */
-  function busSend(channel, message) {
+  function busSend (channel, message) {
     var payload = message || {};
     broadcastLocalMessage(channel, payload);
 
     var ch = ensureChannel(channel);
     ch.sequence += 1;
-    
+
     var envelope = {
       id: resolved._runtime + "-" + Date.now().toString(36) + "-" + ch.sequence,
       runtime: resolved._runtime,
@@ -787,7 +803,7 @@
       sequence: ch.sequence,
       payload: payload,
     };
-    
+
     return new Promise(function (resolve) {
       envelope._resolve = resolve;
       ch.queue.push(envelope);
@@ -805,8 +821,8 @@
    * @param {BusOptions} [options] - Liveness context and memory management settings.
    * @returns {function(): void} An unsubscribe function.
    */
-  function busOn(channel, handler, options) {
-    if (typeof handler !== "function") return function () {};
+  function busOn (channel, handler, options) {
+    if (typeof handler !== "function") return function () { };
     options = options || {};
 
     var context = options.context !== undefined ? options.context : global;
@@ -814,9 +830,9 @@
 
     if (resolved.handshake && !isContextAlive(context)) {
       log("on rejected; context already dead", channel);
-      return function () {};
+      return function () { };
     }
-    
+
     var sub = {
       handler: useWeak ? null : handler,
       handlerRef: useWeak ? new WeakRef(handler) : null,
@@ -828,7 +844,7 @@
 
     ensureChannel(channel).subscribers.add(sub);
 
-    return function unsubscribe() {
+    return function unsubscribe () {
       dropSubscription(sub);
     };
   }
@@ -856,7 +872,7 @@
    * @param {Object} [options] - New configuration values to apply.
    * @returns {LeanStateConfig} The active configuration.
    */
-  function config(options) {
+  function config (options) {
     if (options == null) {
       var r = resolved;
       return {
@@ -873,11 +889,11 @@
     }
 
     if (typeof options !== "object") return config();
-    
+
     Object.keys(options).forEach(function (k) {
       if (k in DEFAULTS || k === "namespace") userConfig[k] = options[k];
     });
-    
+
     var prevRuntime = resolved._runtime;
     var prevBeat = resolved.heartbeat;
     var prevBridgeChannel = resolved.bridgeChannel;
@@ -901,7 +917,7 @@
    * @memberof module:lean-state
    * @returns {LeanStateIdentity}
    */
-  function getIdentity() {
+  function getIdentity () {
     return {
       app: resolved.app,
       namespace: resolved.namespace,
@@ -915,7 +931,7 @@
    * Used automatically on page unload.
    * @private
    */
-  function destroy() {
+  function destroy () {
     if (persistTimer != null) {
       clearTimeout(persistTimer);
       persistTimer = null;
@@ -925,17 +941,17 @@
       globalHeartbeatTimer = null;
     }
     if (bridge) {
-      try { bridge.close(); } catch (_) {}
+      try { bridge.close(); } catch (_) { }
       bridge = null;
     }
-    
+
     flushPersistAndNotify();
-    
+
     Object.keys(channels).forEach(function (name) {
       Array.from(channels[name].subscribers).forEach(dropSubscription);
       channels[name].queue = [];
     });
-    
+
     channels = Object.create(null);
     keySubscribers = Object.create(null);
     log("destroyed");
@@ -963,7 +979,7 @@
       on: busOn,
       prune: busPrune,
     },
-    get identity() {
+    get identity () {
       return getIdentity();
     },
     version: "1.3.0",
@@ -975,6 +991,7 @@
   hydrateFromStorage();
 
   // Expose globally
+  // Expose globally
   if (!global.leanState) {
     global.leanState = leanState;
   } else {
@@ -983,6 +1000,6 @@
 
   // CommonJS export if applicable
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = global.leanState;
+    module.exports = leanState;
   }
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this);
