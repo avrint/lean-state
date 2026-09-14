@@ -336,7 +336,12 @@ var stateStyleTag = null;
     Object.keys(memoryState).forEach(function (key) {
       var entry = memoryState[key];
       if (entry && entry.value !== undefined && entry.value !== null) {
-        var strVal = typeof entry.value === "object" ? JSON.stringify(entry.value) : String(entry.value);
+        var strVal;
+        if (typeof entry.value === "boolean") {
+          strVal = entry.value ? "1" : "0";
+        } else {
+          strVal = typeof entry.value === "object" ? JSON.stringify(entry.value) : String(entry.value);
+        }
         cssRules.push("    --ls-" + key + ": " + strVal + ";");
       }
     });
