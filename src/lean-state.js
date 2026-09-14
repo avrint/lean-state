@@ -313,24 +313,40 @@
     }
   }
 
+var stateStyleTag = null;
 
-  /**
-   * Updates or removes a custom CSS property on documentElement matching the state key.
-   * @private
-   * @param {string} key - State key.
-   * @param {*} value - Value to reflect in CSS.
-   */
-  function updateCssVariable (key, value) {
-    if (typeof document === "undefined" || !document.documentElement) return;
-    var propName = "--ls-" + key;
-    if (value === undefined || value === null) {
-      document.documentElement.style.removeProperty(propName);
-    } else {
-      var strVal = typeof value === "object" ? JSON.stringify(value) : String(value);
-      document.documentElement.style.setProperty(propName, strVal);
+  function getOrCreateStyleTag () {
+    if (typeof document === "undefined") return null;
+    if (!stateStyleTag) {
+      stateStyleTag = document.getElementById("lean-state-vars");
+      if (!stateStyleTag) {
+        stateStyleTag = document.createElement("style");
+        stateStyleTag.id = "lean-state-vars";
+        (document.head || document.documentElement).appendChild(stateStyleTag);
+      }
     }
+    return stateStyleTag;
   }
 
+  function syncCssLayer () {
+    var tag = getOrCreateStyleTag();
+    if (!tag) return;
+
+    var cssRules = [];
+    Object.keys(memoryState).forEach(function (key) {
+      var entry = memoryState[key];
+      if (entry && entry.value !== undefined && entry.value !== null) {
+        var strVal = typeof entry.value === "object" ? JSON.stringify(entry.value) : String(entry.value);
+        cssRules.push("    --ls-" + key + ": " + strVal + ";");
+      }
+    });
+
+    var layerContent = "@layer lean-state {\n  :root {\n" + cssRules.join("\n") + "\n  }\n}";
+    if (tag.textContent !== layerContent) {
+      tag.textContent = layerContent;
+    }
+  }
+  
   /**
    * Executes functions safely, catching and routing errors.
    * @private
@@ -358,7 +374,7 @@
    * @private
    */
   function notifyKey(key, value) {
-    updateCssVariable(key, value); // Sync reactive CSS property
+    syncCssLayer(); // Sync reactive CSS property layer
     var set = keySubscribers[key];
     if (!set) return;
     set.forEach(function (handler) {
@@ -448,11 +464,12 @@
             var parsed = JSON.parse(raw);
             var val = parsed && "v" in parsed ? parsed.v : parsed;
             memoryState[logical] = { value: val, persistence: p };
-            updateCssVariable(logical, val); // Sync hydrated value to CSS
           } catch (_) {}
         }
       } catch (_) {}
     });
+
+    syncCssLayer(); // Sync hydrated values to CSS layer once
   }
 
   /**
