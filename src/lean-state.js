@@ -336,7 +336,7 @@ var stateStyleTag = null;
     Object.keys(memoryState).forEach(function (key) {
       var entry = memoryState[key];
       if (entry && entry.value !== undefined && entry.value !== null) {
-        var strVal;
+        var strVal = typeof entry.value === "object" ? JSON.stringify(entry.value) : String(entry.value);
         if (typeof entry.value === "boolean") {
           strVal = entry.value ? "1" : "0";
         } else {
@@ -381,6 +381,7 @@ var stateStyleTag = null;
   function notifyKey(key, value) {
     syncCssLayer(); // Sync reactive CSS property layer
     var set = keySubscribers[key];
+    log("notify", key, "→", value, set ? "(" + set.size + " subscribers)" : "(no subscribers)");
     if (!set) return;
     set.forEach(function (handler) {
       safeCall(handler, [value, key], "state:" + key);
@@ -506,6 +507,7 @@ var stateStyleTag = null;
     memoryState[key] = { value: value, persistence: persistence };
     pendingPersist[key] = true;
     schedulePersistAndNotify();
+    log("set", key, "→", value, "(" + persistence + ")");
     return value;
   }
 
@@ -520,6 +522,7 @@ var stateStyleTag = null;
       delete memoryState[key];
       pendingPersist[key] = true;
       schedulePersistAndNotify();
+      log("remove", key);
     }
   }
 
@@ -826,6 +829,8 @@ var stateStyleTag = null;
       payload: payload,
     };
 
+    log("bus →", channel, payload);
+
     return new Promise(function (resolve) {
       envelope._resolve = resolve;
       ch.queue.push(envelope);
@@ -865,7 +870,7 @@ var stateStyleTag = null;
     };
 
     ensureChannel(channel).subscribers.add(sub);
-
+    log("bus.on", channel, useWeak ? "(weak)" : "(strong)");
     return function unsubscribe () {
       dropSubscription(sub);
     };
